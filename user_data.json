@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": "2025-07-16T04:32:00.782647",
+    "ip_address": "127.0.0.1",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+    "referrer": "http://127.0.0.1:5000/get-location",
+    "accept_language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,hi;q=0.6,ja;q=0.5",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "connection": "keep-alive",
+    "latitude": 28.98375283632725,
+    "longitude": 77.09047123421466,
+    "url": "https://www.google.com/maps?q=28.98375283632725,77.09047123421466"
+  }
+]
